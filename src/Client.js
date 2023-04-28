@@ -2,8 +2,13 @@ const net = require('net');
 const readline = require('readline');
 
 // server address and port
-const serverAddress = 'localhost';
-const port = 8080;
+const serverAddress = process.argv[2];
+const port = parseInt(process.argv[3]);
+
+if (!serverAddress || !port) {
+  console.error("Error: Please provide the server address and port number.");
+  process.exit(1);
+}
 
 // create a socket to connect to the server
 const client = net.createConnection(port, serverAddress, () => {

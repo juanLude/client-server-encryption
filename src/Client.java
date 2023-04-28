@@ -7,9 +7,15 @@ import java.util.Arrays;
 
 public class Client {
     public static void main(String[] args) throws IOException {
+        // check input arguments
+         if (args.length != 2) {
+            System.err.println("Usage: java Client <serverAddress> <portNumber>");
+            System.exit(1);
+        }
+        String serverAddress = args[0];
+        int port = Integer.parseInt(args[1]);
         // server address and port
-        String serverAddress = "localhost";
-        int port = 8080;
+  
         try {
             // create a socket to connect to the server
             Socket client = new Socket(serverAddress, port);

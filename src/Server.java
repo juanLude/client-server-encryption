@@ -222,8 +222,9 @@ public class Server {
 
     // create a new KeyValueServer object and start the server
     public static void main(String[] args) {
+        int port = Integer.parseInt(args[0]);
         Server server = new Server();
-        server.start(8080);
+        server.start(port);
     }
 
 }
