@@ -1,0 +1,8 @@
+Note that in order for SSL to work, you'll need to create two key stores: 
+one for the server (server.keystore) and one for the client (client.truststore). 
+These key stores should contain the SSL certificates needed to establish a secure 
+connection between the client and server.
+
+* the server's authentication mechanism is not very secure as it stores user credentials 
+in plaintext in memory. A more secure approach would be to hash passwords and store the 
+hashed passwords instead.

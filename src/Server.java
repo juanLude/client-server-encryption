@@ -4,25 +4,31 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 public class Server {
     // store key-value pairs
     private static Map<String, Map<String, String>> keyValueStore;
     // keep track of client connections
     private static Map<String, Boolean> clientConnected;
+     // keep track of credentials
+    private static Map<String, String> userCredentials;
 
     // constructor to initialise fields to empty hashmaps
     public Server() {
         keyValueStore = new HashMap<>();
         clientConnected = new HashMap<>();
+        userCredentials = new HashMap<>();
     }
 
     // create a new ServerSocket object with the specified port number and listen
     // for incoming connections
     public void start(int port) {
+        
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server started on port " + port);
 
@@ -42,6 +48,7 @@ public class Server {
             System.err.println("Error: Port " + port + " is already in use.");
             System.exit(1);
         }
+        
     }
 
     // handle communication with individual clients
@@ -55,9 +62,59 @@ public class Server {
         @Override
         public void run() {
             try {
+
+
+                // Add some dummy user credentials
+                userCredentials.put("Juan", "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f");
+                userCredentials.put("Marcos", "1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032");
+                System.out.println(userCredentials.toString());
                 // Read data from the client and send responses back
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+               
+              
+               // Check if the username and password are valid
+
+               while(true){
+           
+
+                 // Read the username and password from the client
+                 String username = in.readLine();
+                 String password= in.readLine();
+                
+                 String hashedPassword = hashPassword(password);               
+                if (!userCredentials.containsKey(username) && !clientConnected.containsKey(username)) {
+        
+                    userCredentials.put(username, hashedPassword);
+                    out.println("You have been registered as " + username);
+                    clientConnected.put(username, true);
+                     // initialise an empty HashMap for storing the client's key-value pairs
+                     keyValueStore.put(username, new HashMap<>());
+                    System.out.println(userCredentials.toString());
+                    break;
+                        
+                    }else if (userCredentials.containsKey(username) && userCredentials.containsValue(hashPassword(password)) && !clientConnected.isEmpty() & clientConnected.containsKey(username)){
+                        out.println("You are already logged in. ");
+                    } 
+                    else if (userCredentials.containsKey(username) && userCredentials.containsValue(hashPassword(password))){
+                        clientConnected.put(username, true);
+                        out.println("Welcome back " + username + ". You are logged in now.");
+                        System.out.println(userCredentials.toString());
+                        System.out.println(clientConnected.toString());
+                        // add the client to the clientConnected map
+                        clientConnected.put(username, true);
+                        // initialise an empty HashMap for storing the client's key-value pairs
+                        keyValueStore.put(username, new HashMap<>());
+                        break;
+                    }
+                    
+                    else{
+                        out.println("Invalid username or password. Please try again.");
+                    }   
+
+                }
+                
+
                 // read a one line text from a given input source
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
@@ -68,31 +125,31 @@ public class Server {
                     // by the Client
                     switch (command) {
 
-                        case "CONNECT":
-                            // parse client input to get client id
-                            String[] result = Arrays.stream(tokens, 1, tokens.length).toArray(String[]::new);
-                            String client = String.join(" ", result);
-                            // no client id provided hence close the client socket after break
-                            if (tokens.length < 2) {
-                                System.out.println("CONNECT: ERROR");
-                                out.println("CONNECT: ERROR");
-                                break;
-                            }
-                            // client already connected hence close the client socket after break
-                            if (clientConnected.containsKey(client)) {
-                                System.out.println("CONNECT: ERROR");
-                                out.println("CONNECT: ERROR");
-                                break;
-                            }
-                            // store client id
-                            String clientId = client;
-                            // add the client to the clientConnected map
-                            clientConnected.put(clientId, true);
-                            // initialise an empty HashMap for storing the client's key-value pairs
-                            keyValueStore.put(clientId, new HashMap<>());
-                            out.println("CONNECT: OK");
-                            System.out.println("CONNECT: OK");
-                            break;
+                        // case "CONNECT":
+                        //     // parse client input to get client id
+                        //     String[] result = Arrays.stream(tokens, 1, tokens.length).toArray(String[]::new);
+                        //     String client = String.join(" ", result);
+                        //     // no client id provided hence close the client socket after break
+                        //     if (tokens.length < 2) {
+                        //         System.out.println("CONNECT: ERROR");
+                        //         out.println("CONNECT: ERROR");
+                        //         break;
+                        //     }
+                        //     // client already connected hence close the client socket after break
+                        //     if (clientConnected.containsKey(client)) {
+                        //         System.out.println("CONNECT: ERROR");
+                        //         out.println("CONNECT: ERROR");
+                        //         break;
+                        //     }
+                        //     // store client id
+                        //     String clientId = client;
+                        //     // add the client to the clientConnected map
+                        //     clientConnected.put(clientId, true);
+                        //     // initialise an empty HashMap for storing the client's key-value pairs
+                        //     keyValueStore.put(clientId, new HashMap<>());
+                        //     out.println("CONNECT: OK");
+                        //     System.out.println("CONNECT: OK");
+                        //     break;
 
                         case "PUT":
                             // parse client input to separate key value from client id
@@ -115,27 +172,27 @@ public class Server {
                             break;
 
                         case "GET":
-                            // parse Client input to separate key from client id
-                            String[] splitStrings = inputLine.split("%%%");
-                            String clientGet = splitStrings[1];
-                            String getMessage = String.join("", splitStrings[0].split("GET")).trim();
-                            // check if client is connected
-                            if (clientConnected.getOrDefault(clientGet, false)) {
-                                String value = keyValueStore.get(clientGet).get(getMessage);
-                                // no value linked to key provided
-                                if (value == null) {
-                                    System.out.println("GET: ERROR");
-                                    out.println("GET: ERROR");
-                                }
-                                // return value
-                                else {
-                                    System.out.println(value);
-                                    out.println(value);
-                                }
-                            } else {
-                                System.out.println("ERROR: Client not connected");
-                            }
-                            break;
+                           // parse Client input to separate key from client id
+                           String[] splitStrings = inputLine.split("%%%");
+                           String clientGet = splitStrings[1];
+                           String getMessage = String.join("", splitStrings[0].split("GET")).trim();
+                           // check if client is connected
+                           if (clientConnected.getOrDefault(clientGet, false)) {
+                               String value = keyValueStore.get(clientGet).get(getMessage);
+                               // no value linked to key provided
+                               if (value == null) {
+                                   System.out.println("GET: ERROR");
+                                   out.println("GET: ERROR");
+                               }
+                               // return value
+                               else {
+                                   System.out.println(value);
+                                   out.println(value);
+                               }
+                           } else {
+                               System.out.println("ERROR: Client not connected");
+                           }
+                           break;
                         case "DELETE":
                             // parse Client input to separate key from client id
                             String[] breakStrings = inputLine.split("%%%");
@@ -218,13 +275,32 @@ public class Server {
             }
 
         }
+        // hash the password using the SHA-256 algorithm before getting stored in the map
+        private String hashPassword(String password) {
+            try {
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                byte[] hashedBytes = md.digest(password.getBytes());
+                StringBuilder sb = new StringBuilder();
+                for (byte b : hashedBytes) {
+                    sb.append(String.format("%02x", b));
+                }
+                return sb.toString();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Could not hash password", e);
+            }
+        
+        }
     }
 
     // create a new KeyValueServer object and start the server
-    public static void main(String[] args) {
-        int port = Integer.parseInt(args[0]);
+    public static void main(String[] args) throws Exception {
+        
+        //int port = Integer.parseInt(args[0]);
+       
+        
         Server server = new Server();
-        server.start(port);
+        server.start(8080);
+       
     }
 
 }

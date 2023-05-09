@@ -7,14 +7,9 @@ import java.util.Arrays;
 
 public class Client {
     public static void main(String[] args) throws IOException {
-        // check input arguments
-         if (args.length != 2) {
-            System.err.println("Usage: java Client <serverAddress> <portNumber>");
-            System.exit(1);
-        }
-        String serverAddress = args[0];
-        int port = Integer.parseInt(args[1]);
-        // server address and port
+       // server address and port
+       String serverAddress = "localhost";
+       int port = 8080;
   
         try {
             // create a socket to connect to the server
@@ -27,12 +22,40 @@ public class Client {
             // set up an input stream to read user input
             BufferedReader readUserInput = new BufferedReader(new InputStreamReader(System.in));
 
-            // client ID
-            String clientId = "";
-
+            String username = "";
+            String password = "";
             boolean clientConnected = false;
-            // display connection status
-            System.out.println("Connected to server");
+
+            while(!clientConnected){
+                 // Prompt the user for their username and password
+                System.out.print("Enter your username: ");
+                username = readUserInput.readLine();
+                out.println(username);
+                System.out.print("Enter your password: ");
+                password = readUserInput.readLine();
+
+                // Send the username and password to the server
+           
+                out.println(password);
+
+                // Read the server's response
+                String serverResponse = in.readLine();
+                System.out.println(serverResponse);
+                
+
+                if(serverResponse.contains("You have been registered as") || serverResponse.contains("Welcome back")){
+                    clientConnected = true;
+                    // display connection status
+                    System.out.println("Connected to server");
+                    break;
+                }
+                
+            }
+           
+            // client ID
+            String clientId = username;
+
+           
 
             // main loop to handle user input and server responses
             while (true) {
@@ -58,7 +81,7 @@ public class Client {
                 } else if (input.split(" ")[0].equals("DELETE") && clientConnected) {
                     // send delete message with client ID
                     out.println(input + "%%%" + clientId);
-                } else if (input.split(" ")[0].equals("CONNECT") && !clientConnected) {
+                } else if (input.split(" ")[0].equals("CONNECT")) {
                     // extract client ID from input
                     String[] result = Arrays.stream(input.split(" "), 1, input.split(" ").length)
                             .toArray(String[]::new);
