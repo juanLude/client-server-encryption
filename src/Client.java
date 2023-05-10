@@ -24,6 +24,7 @@ public class Client {
 
             String username = "";
             String password = "";
+            Boolean validPassword = false;
             boolean clientConnected = false;
 
             while(!clientConnected){
@@ -31,8 +32,22 @@ public class Client {
                 System.out.print("Enter your username: ");
                 username = readUserInput.readLine();
                 out.println(username);
-                System.out.print("Enter your password: ");
-                password = readUserInput.readLine();
+                while(!validPassword){
+                    System.out.print("Enter your password: ");
+                    password = readUserInput.readLine();
+                    if (password.length() < 8) {
+                        System.out.println("Password must be at least 8 characters long.");
+                     } else if (password.equals(password.toLowerCase())) {
+                        System.out.println("Password must contain at least 1 uppercase character.");
+                     } else {
+                        validPassword = true;
+                        System.out.println("Password is valid!");
+                        
+                        break;
+                     }
+                }
+                // System.out.print("Enter your password: ");
+                // password = readUserInput.readLine();
 
                 // Send the username and password to the server
            
